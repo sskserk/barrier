@@ -17,7 +17,6 @@ func main() {
 	wgReady := sync.WaitGroup{}
 
 	for i := 0; i < N; i++ {
-
 		wgReady.Add(1)
 
 		go routine(i, &wg, &wgReady)
