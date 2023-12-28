@@ -1,0 +1,4 @@
+
+
+barrier:
+	@echo run barrier
