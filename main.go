@@ -7,35 +7,42 @@ import (
 )
 
 const (
-	N = 100
+	N = 3
 )
 
 func main() {
-	wg := sync.WaitGroup{}
-	wg.Add(1)
+	readyToStart := sync.WaitGroup{}
+	readyToStart.Add(N)
 
-	wgReady := sync.WaitGroup{}
+	shotSignal := sync.WaitGroup{}
+	shotSignal.Add(1)
 
 	for i := 0; i < N; i++ {
-		wgReady.Add(1)
+//		wgReady.Add(1)
 
-		go routine(i, &wg, &wgReady)
+		go routine(i, &readyToStart, &shotSignal)
 	}
 
-	wgReady.Wait()
+//	wgReady.Wait()
 
 	time.Sleep(5 * time.Second)
+	readyToStart.Wait()
 
 	fmt.Println(time.Now(), "Ready, steady, go...")
-	wg.Done()
-	time.Sleep(5 * time.Second)
+
+	
+	shotSignal.Done()
+//	wg.Done()
+//	time.Sleep(5 * time.Second)
 }
 
-func routine(id int, wg *sync.WaitGroup, wgReady *sync.WaitGroup) {
+func routine(id int, readyToStart *sync.WaitGroup, shotSignal *sync.WaitGroup) {
 	fmt.Printf("Gorotuine [%d] is ready ro run...\n", id)
-	wgReady.Done()
+	readyToStart.Done()
 
-	wg.Wait()
+	shotSignal.Wait() // wait for the shot
 
 	fmt.Println(time.Now(), id)
+
+	
 }
