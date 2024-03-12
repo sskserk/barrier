@@ -33,7 +33,7 @@ func main() {
 		transactionsStartSignal.Wait()
 
 		a.Dec(amount) // a = a - amount
-		b.Inc(amount) // b = b - amount
+		b.Inc(amount) // b = b + amount
 
 		waitChannel <- true
 	}
