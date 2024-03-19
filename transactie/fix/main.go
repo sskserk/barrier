@@ -79,7 +79,6 @@ func main() {
 		case <-waitChannel:
 		}
 	}
-	//ime.Sleep(1 * time.Second)
 
-	fmt.Println(a, b)
+	fmt.Println(a.amount, b.amount)
 }
