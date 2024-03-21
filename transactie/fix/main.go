@@ -6,8 +6,10 @@ import (
 )
 
 type Account struct {
-	amount int
-	lock   sync.Mutex
+	id        int
+	amount    int
+	suspended bool
+	lock      sync.Mutex
 }
 
 func (account *Account) Inc(amount int) {
@@ -26,58 +28,56 @@ func (account *Account) Unlock() {
 	account.lock.Unlock()
 }
 
+func (account *Account) SetSuspended(isSuspended bool) {
+	account.suspended = isSuspended
+}
+
+func (account *Account) IsSuspended() bool {
+	return account.suspended
+}
+
 const numberOfTransactions = 100
 
 func main() {
-	waitChannel := make(chan bool, numberOfTransactions)
+	waitChannel := make(chan bool, numberOfTransactions*2)
 
-	var a = Account{amount: 1000, lock: sync.Mutex{}}
-	var b = Account{amount: 1000, lock: sync.Mutex{}}
+	var a = Account{id: 1, amount: 1000, lock: sync.Mutex{}}
+	var b = Account{id: 2, amount: 1000, lock: sync.Mutex{}}
 
 	transactionsStartSignal := sync.WaitGroup{}
 	transactionsStartSignal.Add(numberOfTransactions * 2)
 
-	routineA := func(amount int) {
-		transactionsStartSignal.Done()
-		transactionsStartSignal.Wait()
-		a.Lock()
-		b.Lock()
-
-		defer a.Unlock()
-		defer b.Unlock()
-
-		a.Dec(amount) // a = a - amount
-		b.Inc(amount) // b = b - amount
-
-		waitChannel <- true
-	}
-
-	routineB := func(amount int) {
+	transferRoutine := func(sourceAccount *Account, destinationAccount *Account, amount int) {
 		transactionsStartSignal.Done()
 		transactionsStartSignal.Wait()
 
-		a.Lock()
-		b.Lock()
+		leftAccount := sourceAccount
+		rightAccount := destinationAccount
+		if sourceAccount.id > destinationAccount.id {
+			leftAccount = destinationAccount
+			rightAccount = sourceAccount
+		}
+		leftAccount.Lock()
+		rightAccount.Lock()
 
-		defer a.Unlock()
-		defer b.Unlock()
+		defer leftAccount.Unlock()
+		defer rightAccount.Unlock()
 
-		b.Dec(amount) // b = b - amount
-		a.Inc(amount) // a = a + amount
+		if !sourceAccount.IsSuspended() && !destinationAccount.IsSuspended() {
+			sourceAccount.Dec(amount)      // left = left - amount
+			destinationAccount.Inc(amount) // right = right + amount
+		}
 
 		waitChannel <- true
 	}
 
 	for i := 0; i < numberOfTransactions; i++ {
-		go routineA(10)
-		go routineB(10)
+		go transferRoutine(&a, &b, 10)
+		go transferRoutine(&b, &a, 10)
 	}
 
-	for i := 0; i < numberOfTransactions * 2; i++ {
-		select {
-
-		case <-waitChannel:
-		}
+	for i := 0; i < numberOfTransactions*2; i++ {
+		<-waitChannel
 	}
 
 	fmt.Println(a.amount, b.amount)
