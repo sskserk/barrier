@@ -35,6 +35,8 @@ func main() {
 
 	var a = Account{id: 1, amount: 1000, suspended: false}
 	var b = Account{id: 2, amount: 1000, suspended: false}
+	// ...
+	//var z = Account{id: 26, amount: 1000, suspended: false}
 
 	transactionsStartSignal := sync.WaitGroup{}
 	transactionsStartSignal.Add(numberOfTransactions * 2)
@@ -47,13 +49,15 @@ func main() {
 			sourceAccount.Dec(amount)      // source = source - amount
 			destinationAccount.Inc(amount) // destination = destination + amount
 		}
-
 		waitChannel <- true
 	}
 
 	for i := 0; i < numberOfTransactions; i++ {
 		go transferRoutine(&a, &b, 10)
 		go transferRoutine(&b, &a, 10)
+		// ...
+		// go transferRoutine(&y, &z, 10)
+		// go transferRoutine(&z, &a, 10)
 	}
 
 	for i := 0; i < numberOfTransactions*2; i++ {
